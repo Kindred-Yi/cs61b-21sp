@@ -6,6 +6,7 @@ import java.util.Observable;
 
 /** The state of a game of 2048.
  *  @author TODO: YOUR NAME HERE
+ *  Kindred Yi
  */
 public class Model extends Observable {
     /** Current contents of the board. */
@@ -106,6 +107,43 @@ public class Model extends Observable {
      *    value, then the leading two tiles in the direction of motion merge,
      *    and the trailing tile does not.
      * */
+    int maxRow = 3;
+
+    public boolean upMerge(int col, int row){
+        int rawRow = row;
+        boolean temp = false;
+        Tile t = board.tile(col, row);
+
+        if (t != null) {
+            while ((row < maxRow) && board.tile(col, ++row) == null){
+                temp = true;
+            }
+
+
+
+            if (row != rawRow) {
+                Tile n = board.tile(col, row);
+
+                if (n == null) {
+                    board.move(col, row, t);
+                }else{
+                    if (n.value() == t.value()){
+                        board.move(col, row, t);
+                        maxRow--;
+                        score += t.next().value();
+                        temp = true;
+                    }else{
+                        board.move(col, row - 1, t);
+                        maxRow--;
+                    }
+                }
+
+
+            }
+        }
+        return temp;
+    }
+
     public boolean tilt(Side side) {
         boolean changed;
         changed = false;
@@ -114,12 +152,25 @@ public class Model extends Observable {
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
 
+
+        board.setViewingPerspective(side);
+        for (int i = 0; i < 4; i++) {
+            maxRow = 3;
+            for (int j = 2; j >= 0; j--) {
+                if(upMerge(i, j)) changed = true;
+
+            }
+        }
+        board.setViewingPerspective(Side.NORTH);
+
         checkGameOver();
         if (changed) {
             setChanged();
         }
         return changed;
     }
+
+
 
     /** Checks if the game is over and sets the gameOver variable
      *  appropriately.
@@ -138,6 +189,13 @@ public class Model extends Observable {
      * */
     public static boolean emptySpaceExists(Board b) {
         // TODO: Fill in this function.
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
+                if (b.tile(i, j) == null) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -148,6 +206,16 @@ public class Model extends Observable {
      */
     public static boolean maxTileExists(Board b) {
         // TODO: Fill in this function.
+        Tile btile;
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
+                btile = b.tile(i,j);
+              if (btile != null && btile.value() == MAX_PIECE) {
+                    return true;
+                }
+            }
+        }
+
         return false;
     }
 
@@ -159,6 +227,28 @@ public class Model extends Observable {
      */
     public static boolean atLeastOneMoveExists(Board b) {
         // TODO: Fill in this function.
+        int bsize = b.size();
+        Tile btile;
+        if (emptySpaceExists(b)) return true;
+        for (int i = 0; i < bsize; i += 3) {
+            for (int j = 0; j < 3; j++) {
+                btile = b.tile(i,j);
+                if (btile.value() == b.tile(i, j + 1).value()) return true;
+            }
+
+        }
+        for (int j = 0; j < bsize; j++) {
+            for (int i = 0; i < 3; i++) {
+                btile = b.tile(i,j);
+                if (btile.value() == b.tile(i + 1, j).value()) return true;
+            }
+        }
+        for (int i = 1; i < bsize - 1; i++){
+            for (int j = 1; j < bsize - 1; j++){
+                btile = b.tile(i,j);
+                if (btile.value() == b.tile(i - 1, j).value() || btile.value() == b.tile(i + 1, j).value() || btile.value() == b.tile(i, j + 1).value() || btile.value() == b.tile(i, j - 1).value()) return true;
+            }
+        }
         return false;
     }
 
